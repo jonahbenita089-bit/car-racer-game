@@ -1,0 +1,168 @@
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: radial-gradient(circle at top, #232b3b, #090d14 62%);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+}
+
+#startScreen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(10, 14, 20, 0.96), rgba(27, 39, 58, 0.94));
+  z-index: 20;
+  color: white;
+  text-align: center;
+  padding: 24px;
+}
+
+#startScreen.hidden {
+  display: none;
+}
+
+#startScreen h1 {
+  margin: 0 0 10px;
+  font-size: clamp(2.4rem, 7vw, 5rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#startScreen p {
+  margin: 0 0 28px;
+  color: #dce7ff;
+  font-size: clamp(1rem, 2.8vw, 1.5rem);
+}
+
+.mode-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 200px));
+  gap: 16px;
+  width: min(90vw, 500px);
+}
+
+.mode-buttons button {
+  border: 0;
+  border-radius: 18px;
+  padding: 18px 16px;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  font-weight: 700;
+  background: linear-gradient(180deg, #ff9f1c, #ff6a00);
+  color: white;
+  box-shadow: 0 10px 18px rgba(255, 110, 0, 0.35);
+  cursor: pointer;
+}
+
+#gameWrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #02070d;
+}
+
+#gameCanvas {
+  width: min(100vw, 100vh * 0.56);
+  height: min(100vh, 100vw * 1.8);
+  max-width: 100%;
+  max-height: 100%;
+  background: #111827;
+  border: 2px solid rgba(255,255,255,0.12);
+  border-radius: 18px;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+}
+
+#controlsLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.player-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.control-button {
+  position: absolute;
+  width: 84px;
+  height: 84px;
+  border: 0;
+  border-radius: 18px;
+  background: rgba(17, 24, 39, 0.76);
+  color: white;
+  font-size: 1.9rem;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.15), 0 8px 18px rgba(0,0,0,0.25);
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.control-button:active,
+.control-button.active {
+  background: rgba(255, 166, 0, 0.9);
+  transform: scale(0.96);
+}
+
+.control-button.left { left: 18px; bottom: 18px; }
+.control-button.right { left: 110px; bottom: 18px; }
+.control-button.accel { right: 18px; top: 18px; }
+.control-button.brake { right: 18px; bottom: 18px; }
+
+.player-label {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  z-index: 5;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 700px) {
+  .mode-buttons {
+    grid-template-columns: 1fr 1fr;
+    width: min(92vw, 420px);
+  }
+
+  .control-button {
+    width: 68px;
+    height: 68px;
+    font-size: 1.5rem;
+  }
+
+  .control-button.left { left: 12px; }
+  .control-button.right { left: 88px; }
+  .control-button.accel { right: 12px; }
+  .control-button.brake { right: 12px; }
+}
