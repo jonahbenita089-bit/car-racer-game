@@ -1,0 +1,9 @@
+{
+  "name": "Car Racer Split Screen",
+  "short_name": "CarRacer",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "description": "Android-style local split-screen racing game for one phone."
+}
