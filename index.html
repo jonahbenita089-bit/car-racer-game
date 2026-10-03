@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#111827" />
+    <title>Car Racer Split Screen</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="startScreen" class="panel visible">
+        <h1>Car Racer</h1>
+        <p>Single device local multiplayer</p>
+        <div class="mode-buttons">
+          <button data-players="1">1 Player</button>
+          <button data-players="2">2 Players</button>
+          <button data-players="3">3 Players</button>
+          <button data-players="4">4 Players</button>
+        </div>
+      </div>
+
+      <div id="gameWrap">
+        <canvas id="gameCanvas" width="1000" height="1800"></canvas>
+        <div id="controlsLayer"></div>
+      </div>
+    </div>
+
+    <script src="game.js"></script>
+  </body>
+</html>
