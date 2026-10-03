@@ -41,7 +41,7 @@ function rand(min, max) {
   return min + Math.random() * (max - min);
 }
 
-function createCar({ id, x, y, angle, isPlayer, playerIndex }) {
+function createCar({ id, x, y, angle, isPlayer, playerIndex, labelOverride, colorOverride }) {
   return {
     id,
     x,
@@ -60,8 +60,9 @@ function createCar({ id, x, y, angle, isPlayer, playerIndex }) {
     distance: 0,
     alive: true,
     control: { left: false, right: false, accel: false, brake: false },
-    label: isPlayer ? `P${playerIndex + 1}` : `AI-${id}`,
-    color: COLORS[id % COLORS.length]
+    label: labelOverride || (isPlayer ? `P${playerIndex + 1}` : `AI-${id}`),
+    color: colorOverride || COLORS[id % COLORS.length],
+    isCopilot: labelOverride === "Copilot"
   };
 }
 
@@ -174,11 +175,23 @@ function generateRace(playerCount) {
     }));
   }
 
-  for (let i = 0; i < 12 - playerCount; i++) {
-    const x = laneXs[(i + playerCount) % laneXs.length] + rand(-16, 16);
-    const y = 150 + (i + playerCount) * 90;
+  const copilotIndex = playerCount + 1;
+  aiCars.push(createCar({
+    id: copilotIndex,
+    x: laneXs[1] + 12,
+    y: 220,
+    angle: -Math.PI / 2,
+    isPlayer: false,
+    playerIndex: 0,
+    labelOverride: "Copilot",
+    colorOverride: "#7ef9ff"
+  }));
+
+  for (let i = 0; i < 12 - playerCount - 1; i++) {
+    const x = laneXs[(i + playerCount + 1) % laneXs.length] + rand(-16, 16);
+    const y = 150 + (i + playerCount + 1) * 90;
     aiCars.push(createCar({
-      id: playerCount + i + 1,
+      id: playerCount + i + 2,
       x,
       y,
       angle: -Math.PI / 2,
@@ -227,8 +240,14 @@ function updateCar(car, dt) {
     if (car.control.brake) car.speed -= car.brake * dt;
   } else {
     const drift = Math.sin((performance.now() * 0.001 + car.id) * 2.0);
-    car.steer = drift * 0.8;
-    car.speed += car.accel * dt * 0.9;
+    const isCopilotBoost = car.isCopilot;
+    if (isCopilotBoost) {
+      car.steer = drift * 0.9;
+      car.speed += car.accel * dt * 1.3;
+    } else {
+      car.steer = drift * 0.8;
+      car.speed += car.accel * dt * 0.9;
+    }
   }
 
   car.steer *= 0.9;
@@ -313,7 +332,6 @@ function drawViewport(rect, index) {
   }
   ctx.setLineDash([]);
 
-  // Draw cars
   for (const car of state.cars) {
     const px = (car.x - 500) + rect.w / 2 + rect.x;
     const py = (car.y - 2200) + rect.h / 2 + rect.y;
@@ -324,7 +342,6 @@ function drawViewport(rect, index) {
     drawCar(px, py, car);
   }
 
-  // Draw player label
   if (state.started) {
     ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.fillRect(rect.x + 10, rect.y + 10, 120, 28);
@@ -333,7 +350,6 @@ function drawViewport(rect, index) {
     ctx.fillText(`Player ${index + 1}`, rect.x + 16, rect.y + 28);
   }
 
-  // Draw race results
   if (state.raceEnded) {
     ctx.fillStyle = "rgba(0,0,0,0.7)";
     ctx.fillRect(rect.x + 20, rect.y + 40, rect.w - 40, 160);
