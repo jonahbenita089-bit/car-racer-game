@@ -14,6 +14,16 @@ const COLORS = [
   "#7ae582", "#ffd166", "#ff9f1c", "#5f6fff", "#f72585", "#90be6d"
 ];
 
+const COPILOT_MESSAGES = [
+  "Copilot: Clean racing!",
+  "Copilot: Taking the lead!",
+  "Copilot: Smooth cornering!",
+  "Copilot: Let's go faster!",
+  "Copilot: I'm on it!",
+  "Copilot: Full throttle!",
+  "Copilot: Perfecting my line!"
+];
+
 const state = {
   mode: 1,
   started: false,
@@ -23,7 +33,10 @@ const state = {
   raceEnded: false,
   countdown: 0,
   lastTime: 0,
-  winner: null
+  winner: null,
+  copilotMessage: "",
+  copilotMessageTime: 0,
+  copilotCar: null
 };
 
 const playerKeyMap = {
@@ -62,7 +75,8 @@ function createCar({ id, x, y, angle, isPlayer, playerIndex, labelOverride, colo
     control: { left: false, right: false, accel: false, brake: false },
     label: labelOverride || (isPlayer ? `P${playerIndex + 1}` : `AI-${id}`),
     color: colorOverride || COLORS[id % COLORS.length],
-    isCopilot: labelOverride === "Copilot"
+    isCopilot: labelOverride === "Copilot",
+    messageTime: 0
   };
 }
 
@@ -176,16 +190,18 @@ function generateRace(playerCount) {
   }
 
   const copilotIndex = playerCount + 1;
-  aiCars.push(createCar({
+  const copilotCar = createCar({
     id: copilotIndex,
-    x: laneXs[1] + 12,
-    y: 220,
+    x: laneXs[2],
+    y: 100,
     angle: -Math.PI / 2,
     isPlayer: false,
     playerIndex: 0,
     labelOverride: "Copilot",
-    colorOverride: "#7ef9ff"
-  }));
+    colorOverride: "#00ffff"
+  });
+  aiCars.push(copilotCar);
+  state.copilotCar = copilotCar;
 
   for (let i = 0; i < 12 - playerCount - 1; i++) {
     const x = laneXs[(i + playerCount + 1) % laneXs.length] + rand(-16, 16);
@@ -211,6 +227,8 @@ function startRace(playerCount) {
   state.cars = generateRace(playerCount);
   state.players = state.cars.filter(c => c.isPlayer);
   state.winner = null;
+  state.copilotMessage = "";
+  state.copilotMessageTime = 0;
   startScreen.classList.add("hidden");
   clearControls();
   buildControls(playerCount);
@@ -230,6 +248,43 @@ window.addEventListener("keyup", e => {
   window.__keys[e.key] = false;
 });
 
+function getCopilotRanking() {
+  let position = 1;
+  for (const car of state.cars) {
+    if (car.y > state.copilotCar.y) position++;
+  }
+  return position;
+}
+
+function updateCopilotBehavior(car, dt) {
+  const ranking = getCopilotRanking();
+  
+  let aggressionLevel = 1.2;
+  let steerMultiplier = 1.1;
+  let speedBoost = 1.4;
+  
+  if (ranking <= 3) {
+    aggressionLevel = 1.5;
+    steerMultiplier = 1.3;
+    speedBoost = 1.6;
+  } else if (ranking <= 6) {
+    aggressionLevel = 1.3;
+    steerMultiplier = 1.2;
+    speedBoost = 1.5;
+  }
+
+  const time = performance.now() * 0.0008 + car.id * 0.5;
+  const drift = Math.sin(time) * 0.9 + Math.sin(time * 0.7) * 0.4;
+  
+  car.steer = drift * steerMultiplier;
+  car.speed += car.accel * dt * speedBoost;
+
+  if (Math.random() < 0.02 && state.copilotMessageTime <= 0) {
+    state.copilotMessage = COPILOT_MESSAGES[Math.floor(Math.random() * COPILOT_MESSAGES.length)];
+    state.copilotMessageTime = 3.0;
+  }
+}
+
 function updateCar(car, dt) {
   if (!car.alive) return;
 
@@ -238,16 +293,12 @@ function updateCar(car, dt) {
     if (car.control.right) car.steer += 2.2 * dt * 60;
     if (car.control.accel) car.speed += car.accel * dt;
     if (car.control.brake) car.speed -= car.brake * dt;
+  } else if (car.isCopilot) {
+    updateCopilotBehavior(car, dt);
   } else {
     const drift = Math.sin((performance.now() * 0.001 + car.id) * 2.0);
-    const isCopilotBoost = car.isCopilot;
-    if (isCopilotBoost) {
-      car.steer = drift * 0.9;
-      car.speed += car.accel * dt * 1.3;
-    } else {
-      car.steer = drift * 0.8;
-      car.speed += car.accel * dt * 0.9;
-    }
+    car.steer = drift * 0.8;
+    car.speed += car.accel * dt * 0.9;
   }
 
   car.steer *= 0.9;
@@ -274,6 +325,8 @@ function updateRace(dt) {
 
   state.countdown -= dt;
   if (state.countdown > 0) return;
+
+  state.copilotMessageTime -= dt;
 
   for (const car of state.cars) {
     updateCar(car, dt);
@@ -378,6 +431,18 @@ function drawCar(px, py, car) {
   ctx.fillStyle = car.color;
   ctx.fillRect(-car.w / 2, -car.h / 2, car.w, car.h);
 
+  if (car.isCopilot) {
+    ctx.strokeStyle = "#ff00ff";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(-car.w / 2, -car.h / 2, car.w, car.h);
+
+    ctx.fillStyle = "#ff00ff";
+    ctx.font = "bold 10px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("C", 0, -car.h / 2 - 8);
+    ctx.textAlign = "left";
+  }
+
   ctx.fillStyle = "#171717";
   ctx.fillRect(-car.w / 2 + 8, -car.h / 2 + 10, car.w - 16, 26);
 
@@ -414,10 +479,39 @@ function drawCountdown() {
   }
 }
 
+function drawCopilotHUD() {
+  if (!state.started || !state.copilotCar) return;
+
+  const copilotRank = getCopilotRanking();
+
+  ctx.fillStyle = "rgba(0, 255, 255, 0.15)";
+  ctx.fillRect(10, canvas.height - 100, 280, 90);
+
+  ctx.strokeStyle = "rgba(0, 255, 255, 0.5)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(10, canvas.height - 100, 280, 90);
+
+  ctx.fillStyle = "#00ffff";
+  ctx.font = "bold 18px Arial";
+  ctx.fillText("COPILOT", 20, canvas.height - 75);
+
+  ctx.font = "16px Arial";
+  ctx.fillStyle = "#00ffff";
+  ctx.fillText(`Position: ${copilotRank}`, 20, canvas.height - 52);
+  ctx.fillText(`Speed: ${Math.round(state.copilotCar.speed)}`, 20, canvas.height - 30);
+
+  if (state.copilotMessageTime > 0) {
+    ctx.fillStyle = "rgba(0, 255, 255, 0.8)";
+    ctx.font = "italic 14px Arial";
+    ctx.fillText(state.copilotMessage, 20, canvas.height - 12);
+  }
+}
+
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBackground();
   drawCountdown();
+  drawCopilotHUD();
 }
 
 function loop(ts) {
